@@ -9,7 +9,7 @@ def main():
     # Load .env
     try:
         import dotenv
-        dotenv.read_dotenv()
+        dotenv.load_dotenv()
     except ImportError:
         pass
 
