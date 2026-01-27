@@ -27,6 +27,9 @@ urlpatterns = [
     path('api/v1/restaurant/', include('restaurant_app.urls')),
     path('api/v1/customer/', include('customer_app.urls')),
     
+    # Session Login for Browsable API & Swagger
+    path('accounts/', include('rest_framework.urls')),
+    
     # Documentation
     path('swagger<format>/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
