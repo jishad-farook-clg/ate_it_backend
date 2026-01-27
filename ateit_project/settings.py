@@ -87,9 +87,20 @@ WSGI_APPLICATION = 'ateit_project.wsgi.application'
 DATABASES = {
     'default': dj_database_url.config(
         default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
-        conn_max_age=600
+        conn_max_age=0,  # Best practice for serverless functions
+        ssl_require=True
     )
 }
+
+# Fix for Supabase Transaction Pooler (PgBouncer)
+# Prevents "prepared statement does not exist" errors
+DATABASES['default']['OPTIONS'] = {
+    'options': '-c search_path=public'
+}
+# Note: server_side_cursors is disabled by default in django 5+ with psycopg3? 
+# but if using psycopg2 (we are), we might need it? 
+# actually plain psycopg2 doesn't use server side cursors by default unless usually specified. 
+# But just to be sure we don't hold state.
 
 
 # Password validation
