@@ -7,8 +7,11 @@ import sys
 def main():
     """Run administrative tasks."""
     # Load .env
-    import dotenv
-    dotenv.read_dotenv()
+    try:
+        import dotenv
+        dotenv.read_dotenv()
+    except ImportError:
+        pass
 
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ateit_project.settings')
     try:
