@@ -109,7 +109,7 @@ class Command(BaseCommand):
                 Transaction.objects.create(
                     wallet=wallet,
                     amount=Decimal('5000.00'),
-                    transaction_type=Transaction.TransactionType.CREDIT,
+                    transaction_type=Transaction.TransactionType.TOPUP,
                     status=Transaction.Status.COMPLETED,
                     description='Initial Wallet Load'
                 )
@@ -172,7 +172,7 @@ class Command(BaseCommand):
                 Transaction.objects.create(
                     wallet=customer.wallet,
                     amount=order.total_amount,
-                    transaction_type=Transaction.TransactionType.DEBIT,
+                    transaction_type=Transaction.TransactionType.ORDER_PAYMENT,
                     status=Transaction.Status.COMPLETED,
                     description=f'Payment for Order #{order.id}'
                 )
