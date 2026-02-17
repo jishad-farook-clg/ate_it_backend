@@ -2,7 +2,8 @@ from rest_framework import generics, status, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.contrib.auth import login, logout
-from .serializers import RegisterSerializer, LoginSerializer, UserSerializer
+from .serializers import RegisterSerializer, LoginSerializer, UserSerializer, WalletSerializer
+from .models import Wallet
 
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
@@ -33,6 +34,14 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user
+
+class WalletView(generics.RetrieveAPIView):
+    serializer_class = WalletSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        wallet, created = Wallet.objects.get_or_create(user=self.request.user)
+        return wallet
 
 from .models import State, District, City
 from .serializers import StateSerializer, DistrictSerializer, CitySerializer
