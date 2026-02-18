@@ -2,6 +2,8 @@ from rest_framework import generics, status, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.contrib.auth import login, logout
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 from .serializers import RegisterSerializer, LoginSerializer, UserSerializer, WalletSerializer
 from .models import Wallet
 
@@ -9,8 +11,10 @@ class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
     permission_classes = [permissions.AllowAny]
 
+@method_decorator(csrf_exempt, name='dispatch')
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
+    authentication_classes = []  # Disable SessionAuthentication CSRF enforcement
     serializer_class = LoginSerializer
 
     def post(self, request):
