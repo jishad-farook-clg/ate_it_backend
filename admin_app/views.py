@@ -94,3 +94,18 @@ class AdminWalletViewSet(viewsets.ViewSet):
             wallet.save()
 
         return Response({'status': 'approved', 'new_balance': wallet.balance})
+
+    @action(detail=True, methods=['post'])
+    def reject_topup(self, request, pk=None):
+        try:
+            transaction = Transaction.objects.get(pk=pk, status=Transaction.Status.PENDING)
+        except Transaction.DoesNotExist:
+            return Response({'error': 'Transaction not found or not pending'}, status=404)
+
+        if transaction.transaction_type != Transaction.TransactionType.TOPUP:
+            return Response({'error': 'Not a topup transaction'}, status=400)
+
+        transaction.status = Transaction.Status.REJECTED
+        transaction.save()
+
+        return Response({'status': 'rejected', 'transaction_id': str(transaction.id)})

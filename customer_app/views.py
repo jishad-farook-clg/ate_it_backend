@@ -2,6 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
 from django.db import transaction as db_transaction
 from django.shortcuts import get_object_or_404
 
@@ -9,7 +10,7 @@ from core.models import User, Wallet, Transaction
 from core.permissions import IsCustomer
 from restaurant_app.models import RestaurantProfile, FoodItem, Order, OrderItem
 from .models import Issue
-from .serializers import CreateOrderSerializer, IssueSerializer
+from .serializers import CreateOrderSerializer, IssueSerializer, TopupRequestSerializer
 from restaurant_app.serializers import OrderSerializer, RestaurantProfileSerializer, FoodItemSerializer # Added serializers
 
 class CustomerRestaurantViewSet(viewsets.ReadOnlyModelViewSet):
@@ -122,3 +123,57 @@ class CustomerOrderViewSet(viewsets.ViewSet):
                  return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class TopupRequestView(APIView):
+    """
+    POST /customer/wallet/topup/
+    Customer submits a top-up request (manual payment proof flow).
+    Creates a PENDING TOPUP transaction; admin approves/rejects via admin API.
+    Body: { "amount": <decimal>, "reference_id": "<optional>", "description": "<optional>" }
+    """
+    permission_classes = [IsCustomer]
+
+    def post(self, request):
+        serializer = TopupRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        data = serializer.validated_data
+
+        # Ensure the customer has a wallet
+        wallet, _ = Wallet.objects.get_or_create(user=request.user)
+
+        transaction = Transaction.objects.create(
+            wallet=wallet,
+            amount=data['amount'],
+            transaction_type=Transaction.TransactionType.TOPUP,
+            status=Transaction.Status.PENDING,
+            reference_id=data.get('reference_id', ''),
+            description=data.get('description', ''),
+        )
+
+        return Response(
+            {
+                'message': 'Top-up request submitted successfully. Awaiting admin approval.',
+                'transaction_id': str(transaction.id),
+                'amount': str(transaction.amount),
+                'status': transaction.status,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+    def get(self, request):
+        """
+        GET /customer/wallet/topup/
+        Returns the customer's own top-up transaction history.
+        """
+        wallet, _ = Wallet.objects.get_or_create(user=request.user)
+        topups = Transaction.objects.filter(
+            wallet=wallet,
+            transaction_type=Transaction.TransactionType.TOPUP,
+        ).order_by('-created_at')
+
+        from core.serializers import TransactionSerializer
+        serializer = TransactionSerializer(topups, many=True)
+        return Response(serializer.data)
