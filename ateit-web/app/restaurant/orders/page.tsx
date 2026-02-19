@@ -30,7 +30,7 @@ export default function OrdersPage() {
         async function fetchOrders() {
             try {
                 const response = await api.get("/restaurant/orders/");
-                setOrders(response.data.data);
+                setOrders(response.data.data.results || response.data.data);
             } catch (err) {
                 console.error("Failed to fetch orders", err);
                 // Mock data

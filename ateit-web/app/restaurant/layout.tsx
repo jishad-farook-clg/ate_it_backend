@@ -1,14 +1,35 @@
 "use client";
 
-import { Sidebar } from "@/components/dashboard/sidebar";
+import { Sidebar } from "@/components/restaurant/sidebar";
 import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function DashboardLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
+    const router = useRouter();
+    const [authorized, setAuthorized] = useState(false);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const token = localStorage.getItem('token');
+            const role = localStorage.getItem('role');
+            if (!token || role !== 'RESTAURANT') {
+                router.push('/login');
+            } else {
+                setAuthorized(true);
+            }
+        }
+    }, [router]);
+
+    if (!authorized) {
+        return null;
+    }
+
     return (
         <div className="flex h-screen overflow-hidden bg-slate-50/50">
             <Sidebar />

@@ -17,7 +17,7 @@ export default function MenuPage() {
         async function fetchMenu() {
             try {
                 const response = await api.get("/restaurant/food-items/");
-                setItems(response.data.data);
+                setItems(response.data.data.results || response.data.data);
             } catch (err) {
                 console.error("Failed to fetch menu", err);
                 // Mock data

@@ -37,11 +37,13 @@ class AdminDashboardView(APIView):
         }
         return Response(data)
 
+from restaurant_app.serializers import RestaurantProfileSerializer
+
 class AdminRestaurantViewSet(viewsets.ModelViewSet):
     # Only Admin can manage restaurants here
     permission_classes = [IsAdmin]
-    queryset = RestaurantProfile.objects.all()
-    # Serializer will be needed, defining inline or importing
+    queryset = RestaurantProfile.objects.all().order_by('-id')
+    serializer_class = RestaurantProfileSerializer
     
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):

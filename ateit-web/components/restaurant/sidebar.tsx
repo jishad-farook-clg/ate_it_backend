@@ -17,10 +17,10 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
 const menuItems = [
-    { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
-    { icon: Utensils, label: "Menu Items", href: "/dashboard/menu" },
-    { icon: ClipboardList, label: "Orders", href: "/dashboard/orders" },
-    { icon: UserCircle, label: "Profile", href: "/dashboard/profile" },
+    { icon: LayoutDashboard, label: "Dashboard", href: "/restaurant/dashboard" },
+    { icon: Utensils, label: "Menu Items", href: "/restaurant/menu" },
+    { icon: ClipboardList, label: "Orders", href: "/restaurant/orders" },
+    { icon: UserCircle, label: "Profile", href: "/restaurant/profile" },
 ];
 
 export function Sidebar() {

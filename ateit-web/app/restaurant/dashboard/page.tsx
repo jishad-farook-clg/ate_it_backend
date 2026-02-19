@@ -21,16 +21,16 @@ export default function DashboardPage() {
     useEffect(() => {
         async function fetchStats() {
             try {
-                const response = await api.get("/restaurant/analytics/sales/");
-                setStats(response.data.data);
+                const response = await api.get("/restaurant/analytics/stats/");
+                setStats(response.data);
             } catch (err) {
                 console.error("Failed to fetch stats", err);
-                // Mock data for demo if backend fails or needs real auth
+                // Fallback / Mock
                 setStats({
-                    total_revenue: 12450.50,
-                    total_orders: 84,
-                    active_items: 12,
-                    pending_orders: 3
+                    total_revenue: 0,
+                    total_orders: 0,
+                    active_items: 0,
+                    pending_orders: 0
                 });
             } finally {
                 setLoading(false);

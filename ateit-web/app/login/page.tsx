@@ -22,12 +22,41 @@ export default function LoginPage() {
         setError("");
 
         try {
-            const response = await api.post("/auth/auth/login/", { username, password });
-            const { access, token } = response.data.data; // Backend structure might vary, adjusting based on renderers.py
-            localStorage.setItem("token", access || token);
-            router.push("/dashboard");
+            // Encode credentials
+            const credentials = btoa(`${username}:${password}`);
+            const basicAuthToken = credentials; // Store just the base64 string
+
+            // Test login with Basic Auth
+            const response = await api.post("/auth/auth/login/", {
+                username,
+                password,
+            }, {
+                headers: { 'Authorization': `Basic ${basicAuthToken}` }
+            });
+
+            // On success
+            localStorage.setItem("token", basicAuthToken);
+
+            const user = response.data.data; // Standard response data field
+            const userRole = user.role;
+            localStorage.setItem("role", userRole);
+
+            if (userRole === 'ADMIN') {
+                router.push("/admin/dashboard");
+            } else if (userRole === 'RESTAURANT') {
+                router.push("/restaurant/dashboard");
+            } else {
+                // For CUSTOMER or other roles, maybe a public landing or portal
+                router.push("/");
+            }
         } catch (err: any) {
-            setError(err.response?.data?.message || "Invalid credentials. Please try again.");
+            console.error(err);
+            const responseData = err.response?.data;
+            const errorMessage = responseData?.errors?.non_field_errors?.[0]
+                || responseData?.errors?.detail
+                || responseData?.message
+                || "Invalid credentials. Please try again.";
+            setError(errorMessage);
         } finally {
             setLoading(false);
         }
