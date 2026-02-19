@@ -5,7 +5,7 @@ from django.db.models import Sum, Count, F, Q
 from django.db import models
 from django.db.models.functions import TruncDay, TruncWeek, TruncMonth
 from core.permissions import IsAdmin, IsRestaurant
-from restaurant_app.models import Order, RestaurantProfile
+from restaurant_app.models import Order, RestaurantProfile, FoodItem
 
 class AnalyticsViewSet(viewsets.ViewSet):
     # Base class, permissions handled in methods or subclasses
@@ -77,3 +77,28 @@ class RestaurantAnalyticsViewSet(viewsets.ViewSet):
             result.append(item)
 
         return Response(result)
+    @action(detail=False, methods=['get'])
+    def stats(self, request):
+        restaurant = request.user.restaurant_profile
+        
+        # Total Revenue (Completed Orders sum)
+        total_revenue = Order.objects.filter(restaurant=restaurant, status=Order.Status.COMPLETED)\
+            .aggregate(total=Sum('total_amount'))['total'] or 0
+        
+        # Total Orders
+        total_orders = Order.objects.filter(restaurant=restaurant).count()
+        
+        # Active Items
+        active_items = FoodItem.objects.filter(restaurant=restaurant, is_available=True).count()
+        
+        # Pending Orders
+        pending_orders = Order.objects.filter(restaurant=restaurant, status=Order.Status.PENDING).count()
+        
+        data = {
+            "total_revenue": total_revenue,
+            "total_orders": total_orders,
+            "active_items": active_items,
+            "pending_orders": pending_orders,
+            "revenue_profit": float(total_revenue) * 0.70 # Restaurant gets 70%
+        }
+        return Response(data)
