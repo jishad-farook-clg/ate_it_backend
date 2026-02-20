@@ -18,5 +18,6 @@ from core.views_analytics import RestaurantAnalyticsViewSet
 urlpatterns = [
     path('profile/', RestaurantProfileViewSet.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update'}), name='restaurant-profile'),
     path('analytics/sales/', RestaurantAnalyticsViewSet.as_view({'get': 'sales_report'}), name='restaurant-sales-report'),
+    path('analytics/stats/', RestaurantAnalyticsViewSet.as_view({'get': 'stats'}), name='restaurant-stats'),
     path('', include(router.urls)),
 ]
