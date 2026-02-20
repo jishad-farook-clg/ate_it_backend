@@ -13,6 +13,7 @@ import {
 import { formatCurrency } from "@/lib/utils";
 import api from "@/lib/api";
 import { motion } from "framer-motion";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 
 export default function DashboardPage() {
     const [stats, setStats] = useState<any>(null);
@@ -22,7 +23,7 @@ export default function DashboardPage() {
         async function fetchStats() {
             try {
                 const response = await api.get("/restaurant/analytics/stats/");
-                setStats(response.data);
+                setStats(response.data.data);
             } catch (err) {
                 console.error("Failed to fetch stats", err);
                 // Fallback / Mock
@@ -38,6 +39,8 @@ export default function DashboardPage() {
         }
         fetchStats();
     }, []);
+
+    if (loading) return <LoadingScreen />;
 
     const statCards = [
         { label: "Total Revenue", value: formatCurrency(stats?.total_revenue || 0), icon: TrendingUp, color: "text-emerald-500", bg: "bg-emerald-50" },

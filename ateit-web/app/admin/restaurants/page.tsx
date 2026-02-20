@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge"; // Need to create
 import { CheckCircle, XCircle, Search, Store } from "lucide-react";
 import api from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 
 export default function AdminRestaurantsPage() {
     const [restaurants, setRestaurants] = useState<any[]>([]);
@@ -49,7 +50,7 @@ export default function AdminRestaurantsPage() {
         }
     };
 
-    if (loading) return <div className="p-8 text-center text-muted-foreground">Loading restaurants...</div>;
+    if (loading) return <LoadingScreen />;
 
     return (
         <div className="space-y-6">

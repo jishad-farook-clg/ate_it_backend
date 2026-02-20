@@ -7,6 +7,7 @@ import { Plus, Search, MoreVertical, Edit2, Trash2, Tag } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import api from "@/lib/api";
 import { motion, AnimatePresence } from "framer-motion";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 
 export default function MenuPage() {
     const [items, setItems] = useState<any[]>([]);
@@ -32,6 +33,8 @@ export default function MenuPage() {
         }
         fetchMenu();
     }, []);
+
+    if (loading) return <LoadingScreen />;
 
     const filteredItems = items.filter(item =>
         item.name.toLowerCase().includes(searchTerm.toLowerCase())

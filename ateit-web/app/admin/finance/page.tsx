@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { ShieldCheck, CheckCircle, Clock } from "lucide-react";
 import api from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 
 export default function AdminFinancePage() {
     const [transactions, setTransactions] = useState<any[]>([]);
@@ -44,7 +45,7 @@ export default function AdminFinancePage() {
         }
     };
 
-    if (loading) return <div className="p-8 text-center text-muted-foreground">Loading finance data...</div>;
+    if (loading) return <LoadingScreen />;
 
     return (
         <div className="space-y-6">

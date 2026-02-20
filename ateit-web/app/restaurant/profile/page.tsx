@@ -15,6 +15,7 @@ import {
     Clock
 } from "lucide-react";
 import api from "@/lib/api";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 
 export default function ProfilePage() {
     const [profile, setProfile] = useState<any>(null);
@@ -42,6 +43,8 @@ export default function ProfilePage() {
         }
         fetchProfile();
     }, []);
+
+    if (loading) return <LoadingScreen />;
 
     return (
         <div className="space-y-6 max-w-4xl">

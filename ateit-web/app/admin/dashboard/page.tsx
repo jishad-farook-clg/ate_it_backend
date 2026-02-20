@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import api from "@/lib/api";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 
 export default function AdminDashboardPage() {
     const [stats, setStats] = useState<any>(null);
@@ -20,7 +21,7 @@ export default function AdminDashboardPage() {
         async function fetchStats() {
             try {
                 const response = await api.get("/admin/dashboard/");
-                setStats(response.data);
+                setStats(response.data.data);
             } catch (err) {
                 console.error("Failed to fetch admin stats", err);
                 // Graceful fallback or error state
@@ -30,6 +31,8 @@ export default function AdminDashboardPage() {
         }
         fetchStats();
     }, []);
+
+    if (loading) return <LoadingScreen />;
 
     const statCards = [
         {

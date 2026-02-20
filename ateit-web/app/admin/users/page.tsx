@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Search, UserCircle, Mail, MapPin } from "lucide-react";
 import api from "@/lib/api";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 
 export default function AdminUsersPage() {
     const [users, setUsers] = useState<any[]>([]);
@@ -22,7 +23,7 @@ export default function AdminUsersPage() {
         fetchUsers();
     }, []);
 
-    if (loading) return <div className="p-8">Loading users...</div>;
+    if (loading) return <LoadingScreen />;
 
     return (
         <div className="space-y-6">

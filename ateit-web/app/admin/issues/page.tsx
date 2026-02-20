@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AlertCircle, CheckCircle, MessageSquare } from "lucide-react";
 import api from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 
 export default function AdminIssuesPage() {
     const [issues, setIssues] = useState<any[]>([]);
@@ -23,7 +24,7 @@ export default function AdminIssuesPage() {
         fetchIssues();
     }, []);
 
-    if (loading) return <div className="p-8">Loading issues...</div>;
+    if (loading) return <LoadingScreen />;
 
     return (
         <div className="space-y-6">

@@ -15,6 +15,7 @@ import {
 import { formatCurrency } from "@/lib/utils";
 import api from "@/lib/api";
 import { motion } from "framer-motion";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 
 const statusConfig = {
     PENDING: { label: "Pending", icon: Clock, class: "bg-orange-100 text-orange-600 border-orange-200" },
@@ -60,6 +61,8 @@ export default function OrdersPage() {
         }
         fetchOrders();
     }, []);
+
+    if (loading) return <LoadingScreen />;
 
     return (
         <div className="space-y-6">
