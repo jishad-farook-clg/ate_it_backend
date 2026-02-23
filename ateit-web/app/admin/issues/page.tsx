@@ -1,28 +1,53 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AlertCircle, CheckCircle, MessageSquare } from "lucide-react";
+import { AlertCircle, CheckCircle, MessageSquare, Send } from "lucide-react";
 import api from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { LoadingScreen } from "@/components/ui/loading-screen";
+import { Button } from "@/components/ui/button";
 
 export default function AdminIssuesPage() {
     const [issues, setIssues] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [resolvingId, setResolvingId] = useState<number | null>(null);
+    const [resolutionNotes, setResolutionNotes] = useState("");
+    const [submitting, setSubmitting] = useState(false);
+
+    const fetchIssues = async () => {
+        try {
+            const response = await api.get("/admin/issues/");
+            setIssues(response.data.data.results || response.data.data);
+        } catch (err) {
+            console.error("Failed to fetch issues", err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        async function fetchIssues() {
-            try {
-                const response = await api.get("/admin/issues/");
-                setIssues(response.data.data.results || response.data.data);
-            } catch (err) {
-                console.error("Failed to fetch issues", err);
-            } finally {
-                setLoading(false);
-            }
-        }
         fetchIssues();
     }, []);
+
+    const handleResolve = async (issueId: number) => {
+        if (!resolutionNotes.trim()) return;
+
+        setSubmitting(true);
+        try {
+            await api.post(`/admin/issues/${issueId}/resolve/`, {
+                resolution_notes: resolutionNotes
+            });
+            // Refresh issues list or update local state
+            await fetchIssues();
+            setResolvingId(null);
+            setResolutionNotes("");
+        } catch (err) {
+            console.error("Failed to resolve issue", err);
+            alert("Failed to resolve issue. Please try again.");
+        } finally {
+            setSubmitting(false);
+        }
+    };
 
     if (loading) return <LoadingScreen />;
 
@@ -43,12 +68,66 @@ export default function AdminIssuesPage() {
                         <div className="flex-1">
                             <div className="flex items-center justify-between mb-2">
                                 <h3 className="font-semibold text-slate-900">{issue.title}</h3>
-                                <span className={`text-xs px-2 py-1 rounded-full font-medium ${issue.status === 'OPEN' ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'
-                                    }`}>
-                                    {issue.status}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${issue.status === 'OPEN' ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'
+                                        }`}>
+                                        {issue.status}
+                                    </span>
+                                    {issue.status === 'OPEN' && resolvingId !== issue.id && (
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => setResolvingId(issue.id)}
+                                            className="h-7 text-xs"
+                                        >
+                                            Resolve
+                                        </Button>
+                                    )}
+                                </div>
                             </div>
                             <p className="text-slate-600 text-sm mb-3">{issue.description}</p>
+
+                            {issue.status === 'RESOLVED' && issue.resolution_notes && (
+                                <div className="mb-3 p-3 bg-emerald-50 border border-emerald-100 rounded-lg">
+                                    <p className="text-xs font-semibold text-emerald-800 mb-1">Resolution:</p>
+                                    <p className="text-sm text-emerald-700">{issue.resolution_notes}</p>
+                                </div>
+                            )}
+
+                            {resolvingId === issue.id && (
+                                <div className="mb-4 space-y-3 p-4 bg-slate-50 rounded-lg border border-slate-200 animate-in fade-in slide-in-from-top-2">
+                                    <textarea
+                                        className="w-full p-3 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all min-h-[100px]"
+                                        placeholder="Enter resolution notes..."
+                                        value={resolutionNotes}
+                                        onChange={(e) => setResolutionNotes(e.target.value)}
+                                        autoFocus
+                                    />
+                                    <div className="flex justify-end gap-2">
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => {
+                                                setResolvingId(null);
+                                                setResolutionNotes("");
+                                            }}
+                                            disabled={submitting}
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            onClick={() => handleResolve(issue.id)}
+                                            disabled={submitting || !resolutionNotes.trim()}
+                                            className="gap-2"
+                                        >
+                                            {submitting ? "Resolving..." : "Submit Resolution"}
+                                            {!submitting && <Send size={14} />}
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="flex items-center gap-4 text-xs text-muted-foreground bg-slate-50 p-3 rounded-lg">
                                 <span className="flex items-center gap-1">
                                     <MessageSquare size={12} />

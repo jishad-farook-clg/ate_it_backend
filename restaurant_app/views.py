@@ -30,24 +30,23 @@ class RestaurantOrderViewSet(viewsets.ModelViewSet):
              return Response({'error': 'Order already processed'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
+            from decimal import Decimal
             with db_transaction.atomic():
                 order.status = new_status
                 order.save()
 
                 if new_status == Order.Status.COMPLETED:
-                    # Calculate payout
+                    # Calculate payout using Decimal to avoid TypeErrors with floats
                     total = order.total_amount
-                    platform_fee = total * 0.30
-                    restaurant_payout = total * 0.70
+                    
+                    platform_perc = Decimal('0.30')
+                    restaurant_perc = Decimal('0.70')
+                    
+                    platform_fee = (total * platform_perc).quantize(Decimal('0.01'))
+                    restaurant_payout = (total * restaurant_perc).quantize(Decimal('0.01'))
 
                     # Credit Restaurant Wallet
-                    # Only if Restaurant has a wallet (should have created one on signup? or lazily?)
-                    # Let's assume restaurant user has a wallet
-                    # But wait, RestaurantProfile is OneToOne with User
-                    # Wallet is OneToOne with User
-                    # So restaurant.user.wallet exists.
-                    
-                    restaurant_wallet = Wallet.objects.select_for_update().get(user=order.restaurant.user)
+                    restaurant_wallet, _ = Wallet.objects.select_for_update().get_or_create(user=order.restaurant.user)
                     restaurant_wallet.balance += restaurant_payout
                     restaurant_wallet.save()
 
@@ -56,31 +55,29 @@ class RestaurantOrderViewSet(viewsets.ModelViewSet):
                         amount=restaurant_payout,
                         transaction_type=Transaction.TransactionType.PAYOUT,
                         status=Transaction.Status.COMPLETED,
-                        description=f"Payout for Order #{order.order_id}"
+                        description=f"Payout for Order #{order.order_id}",
+                        reference_id=order.order_id
                     )
                     
-                    # Credit Platform Commission (Admin Wallet or separate account)
-                    # We can use a special Admin User Wallet for this
-                    # Or just log it in Transaction with a generic system wallet if needed.
-                    # For now, just logging:
-                    # Find Admin User
+                    # Credit Platform Commission
                     admin_user = User.objects.filter(role=User.Role.ADMIN).first()
                     if admin_user:
-                         admin_wallet, _ = Wallet.objects.get_or_create(user=admin_user)
-                         admin_wallet.balance += platform_fee
-                         admin_wallet.save()
-                         
-                         Transaction.objects.create(
-                             wallet=admin_wallet,
-                             amount=platform_fee,
-                             transaction_type=Transaction.TransactionType.COMMISSION,
-                             status=Transaction.Status.COMPLETED,
-                             description=f"Commission for Order #{order.order_id}"
-                         )
+                        admin_wallet, _ = Wallet.objects.get_or_create(user=admin_user)
+                        admin_wallet.balance += platform_fee
+                        admin_wallet.save()
+                        
+                        Transaction.objects.create(
+                            wallet=admin_wallet,
+                            amount=platform_fee,
+                            transaction_type=Transaction.TransactionType.COMMISSION,
+                            status=Transaction.Status.COMPLETED,
+                            description=f"Commission for Order #{order.order_id}",
+                            reference_id=order.order_id
+                        )
 
                 elif new_status == Order.Status.CANCELLED:
                     # Refund User
-                    customer_wallet = Wallet.objects.select_for_update().get(user=order.customer)
+                    customer_wallet, _ = Wallet.objects.select_for_update().get_or_create(user=order.customer)
                     customer_wallet.balance += order.total_amount
                     customer_wallet.save()
 
@@ -89,10 +86,11 @@ class RestaurantOrderViewSet(viewsets.ModelViewSet):
                         amount=order.total_amount,
                         transaction_type=Transaction.TransactionType.REFUND,
                         status=Transaction.Status.COMPLETED,
-                        description=f"Refund for Order #{order.order_id}"
+                        description=f"Refund for Order #{order.order_id}",
+                        reference_id=order.order_id
                     )
                     
-                    # Also restore stock?
+                    # Also restore stock
                     for item in order.items.all():
                         food_item = item.food_item
                         food_item.quantity += item.quantity
@@ -101,6 +99,9 @@ class RestaurantOrderViewSet(viewsets.ModelViewSet):
             return Response(OrderSerializer(order).data)
 
         except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error updating order {order.id} status to {new_status}: {str(e)}", exc_info=True)
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class RestaurantFoodItemViewSet(viewsets.ModelViewSet):
