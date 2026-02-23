@@ -21,28 +21,49 @@ export default function ProfilePage() {
     const [profile, setProfile] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        async function fetchProfile() {
-            try {
-                const response = await api.get("/restaurant/profile/");
-                setProfile(response.data.data);
-            } catch (err) {
-                console.error("Failed to fetch profile", err);
-                setProfile({
-                    restaurant_name: "Healthy Bites",
-                    description: "Fresh and organic salads and wraps.",
-                    address: "123 Green Street, Foodie City",
-                    phone: "+91 9876543210",
-                    email: "owner@healthybites.com",
-                    is_open: true,
-                    image: null
-                });
-            } finally {
-                setLoading(false);
-            }
+    const fetchProfile = async () => {
+        try {
+            const response = await api.get("/restaurant/profile/");
+            setProfile(response.data.data);
+        } catch (err) {
+            console.error("Failed to fetch profile", err);
+        } finally {
+            setLoading(false);
         }
+    };
+
+    useEffect(() => {
         fetchProfile();
     }, []);
+
+    const handleSave = async () => {
+        try {
+            // Sanitize payload: exclude image if it's a string (URL) as it causes issues with ImageField
+            const { image, user, ...payload } = profile;
+            await api.patch("/restaurant/profile/", payload);
+            alert("Profile updated successfully!");
+            fetchProfile();
+        } catch (err) {
+            console.error("Failed to update profile", err);
+            alert("Failed to update profile.");
+        }
+    };
+
+    const toggleStatus = async () => {
+        try {
+            const newStatus = !profile.is_open;
+            // Optimistic update
+            setProfile({ ...profile, is_open: newStatus });
+
+            await api.patch("/restaurant/profile/", { is_open: newStatus });
+            // No alert needed for toggle, just seamless update
+        } catch (err) {
+            console.error("Failed to update status", err);
+            // Revert on failure
+            setProfile({ ...profile, is_open: !profile.is_open });
+            alert("Failed to update kitchen status.");
+        }
+    };
 
     if (loading) return <LoadingScreen />;
 
@@ -53,7 +74,7 @@ export default function ProfilePage() {
                     <h1 className="text-3xl font-bold text-slate-900 leading-tight">Restaurant Profile</h1>
                     <p className="text-muted-foreground mt-1">Manage your restaurant basic details and visibility.</p>
                 </div>
-                <Button className="gap-2">
+                <Button className="gap-2" onClick={handleSave}>
                     <Save size={18} />
                     Save Changes
                 </Button>
@@ -80,9 +101,12 @@ export default function ProfilePage() {
                         <div className="w-full mt-6 space-y-3">
                             <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                                 <span className="text-sm text-muted-foreground">Kitchen Status</span>
-                                <div className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${profile?.is_open ? "bg-emerald-100 text-emerald-600" : "bg-red-100 text-red-600"}`}>
+                                <button
+                                    onClick={toggleStatus}
+                                    className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase transition-all ${profile?.is_open ? "bg-emerald-100 text-emerald-600" : "bg-red-100 text-red-600"}`}
+                                >
                                     {profile?.is_open ? "Open" : "Closed"}
-                                </div>
+                                </button>
                             </div>
                         </div>
                     </CardContent>
@@ -92,42 +116,31 @@ export default function ProfilePage() {
                     <CardHeader>
                         <CardTitle>Business Information</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <CardContent className="p-6 space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <label className="text-xs font-bold text-slate-500 uppercase">Restaurant Name</label>
-                                <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg border border-slate-100 text-slate-700">
-                                    <Building2 size={18} className="text-slate-400" />
-                                    {profile?.restaurant_name}
-                                </div>
+                                <input
+                                    className="w-full h-12 px-4 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                                    value={profile?.restaurant_name || ""}
+                                    onChange={(e) => setProfile({ ...profile, restaurant_name: e.target.value })}
+                                />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-500 uppercase">Contact Email</label>
-                                <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg border border-slate-100 text-slate-700">
-                                    <Mail size={18} className="text-slate-400" />
-                                    {profile?.email}
-                                </div>
+                                <label className="text-xs font-bold text-slate-500 uppercase">Description</label>
+                                <input
+                                    className="w-full h-12 px-4 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                                    value={profile?.description || ""}
+                                    onChange={(e) => setProfile({ ...profile, description: e.target.value })}
+                                />
                             </div>
                             <div className="space-y-2">
                                 <label className="text-xs font-bold text-slate-500 uppercase">Phone Number</label>
-                                <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg border border-slate-100 text-slate-700">
-                                    <Phone size={18} className="text-slate-400" />
-                                    {profile?.phone}
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-500 uppercase">Operating Hours</label>
-                                <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg border border-slate-100 text-slate-700">
-                                    <Clock size={18} className="text-slate-400" />
-                                    09:00 AM - 11:00 PM
-                                </div>
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-slate-500 uppercase">Address</label>
-                            <div className="flex items-start gap-2 p-3 bg-slate-50 rounded-lg border border-slate-100 text-slate-700">
-                                <MapPin size={18} className="text-slate-400 mt-1" />
-                                {profile?.address}
+                                <input
+                                    className="w-full h-12 px-4 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                                    value={profile?.phone || ""}
+                                    onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                                />
                             </div>
                         </div>
                     </CardContent>

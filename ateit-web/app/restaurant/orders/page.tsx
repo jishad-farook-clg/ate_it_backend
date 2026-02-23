@@ -27,40 +27,30 @@ export default function OrdersPage() {
     const [orders, setOrders] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        async function fetchOrders() {
-            try {
-                const response = await api.get("/restaurant/orders/");
-                setOrders(response.data.data.results || response.data.data);
-            } catch (err) {
-                console.error("Failed to fetch orders", err);
-                // Mock data
-                setOrders([
-                    {
-                        id: 1,
-                        order_id: "ORD-84A2",
-                        customer_name: "John Doe",
-                        total_amount: 340,
-                        status: "PENDING",
-                        items: "2x Spicy Paneer Wrap, 1x Coke",
-                        created_at: "2024-01-20T10:30:00Z"
-                    },
-                    {
-                        id: 2,
-                        order_id: "ORD-92B1",
-                        customer_name: "Alice Smith",
-                        total_amount: 120,
-                        status: "COMPLETED",
-                        items: "1x Veg Cheese Burger",
-                        created_at: "2024-01-20T09:15:00Z"
-                    },
-                ]);
-            } finally {
-                setLoading(false);
-            }
+    const fetchOrders = async () => {
+        try {
+            const response = await api.get("/restaurant/orders/");
+            setOrders(response.data.data.results || response.data.data);
+        } catch (err) {
+            console.error("Failed to fetch orders", err);
+        } finally {
+            setLoading(false);
         }
+    };
+
+    useEffect(() => {
         fetchOrders();
     }, []);
+
+    const handleStatusUpdate = async (id: number, status: string) => {
+        try {
+            await api.patch(`/restaurant/orders/${id}/update_status/`, { status });
+            fetchOrders();
+        } catch (err) {
+            console.error("Failed to update status", err);
+            alert("Failed to update order status.");
+        }
+    };
 
     if (loading) return <LoadingScreen />;
 
@@ -121,7 +111,11 @@ export default function OrdersPage() {
                                                 <Eye size={16} /> Details
                                             </Button>
                                             {order.status === 'PENDING' && (
-                                                <Button size="sm" className="flex-1 gap-2">
+                                                <Button
+                                                    size="sm"
+                                                    className="flex-1 gap-2"
+                                                    onClick={() => handleStatusUpdate(order.id, 'COMPLETED')}
+                                                >
                                                     <CheckCircle2 size={16} /> Ready
                                                 </Button>
                                             )}

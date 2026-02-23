@@ -30,7 +30,13 @@ class AdminAnalyticsViewSet(viewsets.ViewSet):
             .annotate(total_sales=Sum('total_amount'), total_orders=Count('id'))\
             .order_by('-period')
             
-        return Response(sales_data)
+        # Add commission profit (30%)
+        result = []
+        for item in sales_data:
+            item['total_profit'] = float(item['total_sales']) * 0.30
+            result.append(item)
+
+        return Response(result)
 
     @action(detail=False, methods=['get'])
     def leaderboard(self, request):
@@ -94,11 +100,16 @@ class RestaurantAnalyticsViewSet(viewsets.ViewSet):
         # Pending Orders
         pending_orders = Order.objects.filter(restaurant=restaurant, status=Order.Status.PENDING).count()
         
+        # Low Stock Items
+        low_stock_items = FoodItem.objects.filter(restaurant=restaurant, quantity__lt=10).values('name', 'quantity')[:5]
+
         data = {
             "total_revenue": total_revenue,
             "total_orders": total_orders,
             "active_items": active_items,
             "pending_orders": pending_orders,
-            "revenue_profit": float(total_revenue) * 0.70 # Restaurant gets 70%
+            "low_stock_items": list(low_stock_items),
+            "revenue_profit": float(total_revenue) * 0.70, # Restaurant gets 70%
+            "is_open": restaurant.is_open
         }
         return Response(data)

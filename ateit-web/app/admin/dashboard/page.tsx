@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     ShoppingBag,
     DollarSign,
@@ -12,6 +12,7 @@ import {
 import { formatCurrency } from "@/lib/utils";
 import api from "@/lib/api";
 import { LoadingScreen } from "@/components/ui/loading-screen";
+import { SalesChart } from "@/components/dashboard/sales-chart";
 
 export default function AdminDashboardPage() {
     const [stats, setStats] = useState<any>(null);
@@ -93,11 +94,18 @@ export default function AdminDashboardPage() {
                 ))}
             </div>
 
-            {/* Placeholder for future analytics charts */}
-            <Card className="border-dashed border-2 bg-slate-50/50">
-                <CardContent className="h-[400px] flex flex-col items-center justify-center text-muted-foreground">
-                    <TrendingUp size={48} className="mb-4 opacity-20" />
-                    <p>Detailed Analytics Charts coming soon</p>
+            {/* Analytics Chart */}
+            <Card className="p-1">
+                <CardHeader>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <CardTitle>Platform Sales Over Time</CardTitle>
+                            <p className="text-sm text-muted-foreground mt-1">Daily platform-wide revenue tracking</p>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <SalesChart endpoint="/admin/analytics/sales_report/" />
                 </CardContent>
             </Card>
         </div>
