@@ -60,6 +60,15 @@ export default function OrdersPage() {
         }
     };
 
+    const getCustomerName = (customer: any) => {
+        if (!customer) return "Unknown Customer";
+        if (typeof customer !== 'object') return `Customer #${customer}`;
+        if (customer.first_name || customer.last_name) {
+            return `${customer.first_name || ''} ${customer.last_name || ''}`.trim();
+        }
+        return customer.username || `Customer #${customer.id}`;
+    };
+
     if (loading) return <LoadingScreen />;
 
     return (
@@ -84,7 +93,7 @@ export default function OrdersPage() {
                                                 </div>
                                                 <div>
                                                     <p className="text-xs font-bold text-primary uppercase tracking-wider">{order.order_id}</p>
-                                                    <h3 className="font-bold text-lg text-slate-800">{order.customer_name || `Customer #${order.customer}`}</h3>
+                                                    <h3 className="font-bold text-lg text-slate-800">{order.customer_name || getCustomerName(order.customer)}</h3>
                                                 </div>
                                             </div>
                                             <div className={`px-3 py-1 flex items-center gap-2 rounded-full border text-xs font-bold ${config.class}`}>
@@ -159,12 +168,13 @@ export default function OrdersPage() {
                 order={selectedOrder}
                 onClose={() => setSelectedOrder(null)}
                 onStatusUpdate={handleStatusUpdate}
+                getCustomerName={getCustomerName}
             />
         </div>
     );
 }
 
-function OrderDetailsModal({ order, onClose, onStatusUpdate }: { order: any, onClose: () => void, onStatusUpdate: (id: number, status: string) => void }) {
+function OrderDetailsModal({ order, onClose, onStatusUpdate, getCustomerName }: { order: any, onClose: () => void, onStatusUpdate: (id: number, status: string) => void, getCustomerName: (c: any) => string }) {
     if (!order) return null;
 
     const config = statusConfig[order.status as keyof typeof statusConfig] || statusConfig.PENDING;
@@ -213,7 +223,7 @@ function OrderDetailsModal({ order, onClose, onStatusUpdate }: { order: any, onC
                                         {(order.customer_name || 'C').charAt(0)}
                                     </div>
                                     <div>
-                                        <p className="font-bold text-slate-800">{order.customer_name || `Customer #${order.customer}`}</p>
+                                        <p className="font-bold text-slate-800">{order.customer_name || getCustomerName(order.customer)}</p>
                                         <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                                             <Phone size={10} /> Pick-up Order
                                         </p>
