@@ -12,13 +12,25 @@ class UserSerializer(serializers.ModelSerializer):
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
+    role = serializers.CharField(required=False, default='CUSTOMER')
+    restaurant_name = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'password', 'phone_number', 'first_name', 'last_name']
+        fields = ['username', 'email', 'password', 'phone_number', 'first_name', 'last_name', 'role', 'restaurant_name']
 
     def create(self, validated_data):
+        role = validated_data.pop('role', 'CUSTOMER')
+        restaurant_name = validated_data.pop('restaurant_name', None)
+        
         user = User.objects.create_user(**validated_data)
+        user.role = role
+        user.save()
+
+        if role == 'RESTAURANT' and restaurant_name:
+            from restaurant_app.models import RestaurantProfile
+            RestaurantProfile.objects.create(user=user, restaurant_name=restaurant_name)
+            
         return user
 
 class LoginSerializer(serializers.Serializer):
